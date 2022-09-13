@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "Профиль 1": {
-      "commandName": "Executable",
-      "executablePath": "D:\\workПроекты\\github\\vk-archiver\\src\\Test\\bin\\Debug\\net6.0\\Test.exe",
-      "nativeDebugging": true
-    }
-  }
-}
