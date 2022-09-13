@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using System.IO.Compression;
 using VkNet;
 using VkNet.AudioBypassService.Extensions;
 using VkNet.Enums.SafetyEnums;
@@ -27,7 +28,7 @@ namespace Overbeered.VkArchiver
         /// </summary>
         public ulong ApplicationId { get; private set; }
 
-        public VkArchiver(string login, string password, ulong applicationId)
+        public VkArchiver(string login, string password, ulong applicationId = 8206863)
         {
             Login = login;
             Password = password;
@@ -49,18 +50,23 @@ namespace Overbeered.VkArchiver
             }
         }
 
-        public async Task<IEnumerable<Peer>> ArchivePhotosAsync(From from)
+        public async Task ArchivePhotosAsync(From from, string path)
         {
-            return from switch
+            switch (from)
             {
-                From.All => await ArchiveAllPhotosAsync(),
-                From.Dialogs => await ArchiveDialogsPhotosAsync(),
-                From.Chats => await ArchiveChatsPhotosAsync(),
-                _ => new List<Peer>(),
-            };
+                case From.All:
+                    await ArchiveAllPhotosAsync(path);
+                    break;
+                case From.Dialogs:
+                    await ArchiveDialogsPhotosAsync(path);
+                    break;
+                case From.Chats:
+                    await ArchiveChatsPhotosAsync(path);
+                    break;
+            }
         }
 
-        public async Task<Peer?> ArchivePhotosAsync(string name)
+        public async Task ArchivePhotosAsync(string name, string path)
         {
             try
             {
@@ -80,8 +86,8 @@ namespace Overbeered.VkArchiver
                     {
                         if (Item.Conversation.Peer.Type.ToString() == "chat" && Item.Conversation.ChatSettings.Title == name)
                         {
-                            return new Peer(Item.Conversation.ChatSettings.Title,
-                                await PeerPhotoDownloadAsync(Item.Conversation.Peer.Id));
+                            await PhotoDownloadAsync(Item.Conversation.Peer.Id, path + @"\" + Item.Conversation.ChatSettings.Title);
+                            break;
                         }
 
                         if (Item.Conversation.Peer.Type.ToString() == "user")
@@ -91,11 +97,10 @@ namespace Overbeered.VkArchiver
 
                             if ($"{user[0].FirstName} {user[0].LastName}" == name)
                             {
-                                return new Peer(userName,
-                                    await PeerPhotoDownloadAsync(Item.Conversation.Peer.Id));
+                                await PhotoDownloadAsync(Item.Conversation.Peer.Id, path + @"\" + userName);
+                                break;
                             }
                         }
-
                     }
                 }
                 while (count >= 200);
@@ -104,18 +109,16 @@ namespace Overbeered.VkArchiver
             {
                 DebugLog("Error in VkArchiver:\n" + ex.Message);
             }
-            return null;
         }
 
         /// <summary>
-        /// Возвращает все фотографии из всех чатов и диалогов
+        /// Сохраняет все фотографии из всех чатов и диалогов
         /// </summary>
-        /// <returns>Чаты/диалоги с файлами</returns>
-        private async Task<IEnumerable<Peer>> ArchiveAllPhotosAsync()
+        /// <param name="path">Путь для сохранения фотографий</param>
+        private async Task ArchiveAllPhotosAsync(string path)
         {
             ulong? offset = 0;
             long? count;
-            var listPeers = new List<Peer>();
             try
             {
                 do
@@ -132,16 +135,14 @@ namespace Overbeered.VkArchiver
                     {
                         if (Item.Conversation.Peer.Type.ToString() == "chat")
                         {
-                            listPeers.Add(new Peer(Item.Conversation.ChatSettings.Title,
-                                await PeerPhotoDownloadAsync(Item.Conversation.Peer.Id)));
+                            await PhotoDownloadAsync(Item.Conversation.Peer.Id, path + @"\" + Item.Conversation.ChatSettings.Title);
                         }
 
                         if (Item.Conversation.Peer.Type.ToString() == "user")
                         {
                             var user = _vkApi.Users.Get(new long[] { Item.Conversation.Peer.Id });
                             var userName = user[0].FirstName != "DELETED" ? $"{user[0].FirstName} {user[0].LastName}" : $"{Item.Conversation.Peer.Id}";
-                            listPeers.Add(new Peer(userName,
-                                await PeerPhotoDownloadAsync(Item.Conversation.Peer.Id)));
+                            await PhotoDownloadAsync(Item.Conversation.Peer.Id, path + @"\" + userName);
                         }
 
                     }
@@ -152,19 +153,16 @@ namespace Overbeered.VkArchiver
             {
                 DebugLog("Error in VkArchiver:\n" + ex.Message);
             }
-
-            return listPeers;
         }
 
         /// <summary>
-        /// Возвращает все фотографии из всех диалогов
+        /// Сохраняет все фотографии из всех диалогов
         /// </summary>
-        /// <returns>Диалоги с файлами</returns>
-        private async Task<IEnumerable<Peer>> ArchiveDialogsPhotosAsync()
+        /// <param name="path">Путь для сохранения фотографий</param>
+        private async Task ArchiveDialogsPhotosAsync(string path)
         {
             ulong? offset = 0;
             long? count;
-            var listPeers = new List<Peer>();
             try
             {
                 do
@@ -183,8 +181,7 @@ namespace Overbeered.VkArchiver
                         {
                             var user = _vkApi.Users.Get(new long[] { Item.Conversation.Peer.Id });
                             var userName = user[0].FirstName != "DELETED" ? $"{user[0].FirstName} {user[0].LastName}" : $"{Item.Conversation.Peer.Id}";
-                            listPeers.Add(new Peer(userName,
-                                await PeerPhotoDownloadAsync(Item.Conversation.Peer.Id)));
+                            await PhotoDownloadAsync(Item.Conversation.Peer.Id, path + @"\" + userName);
                         }
                     }
                 }
@@ -194,19 +191,16 @@ namespace Overbeered.VkArchiver
             {
                 DebugLog("Error in VkArchiver:\n" + ex.Message);
             }
-
-            return listPeers;
         }
 
         /// <summary>
-        /// Возвращает все фотографии из всех чатов
+        /// Сохраняет все фотографии из всех чатов
         /// </summary>
-        /// <returns>Чаты с файлами</returns>
-        private async Task<IEnumerable<Peer>> ArchiveChatsPhotosAsync()
+        /// <param name="path">Путь для сохранения фотографий</param>
+        private async Task ArchiveChatsPhotosAsync(string path)
         {
             ulong? offset = 0;
             long? count;
-            var listPeers = new List<Peer>();
             try
             {
                 do
@@ -223,8 +217,7 @@ namespace Overbeered.VkArchiver
                     {
                         if (Item.Conversation.Peer.Type.ToString() == "chat")
                         {
-                            listPeers.Add(new Peer(Item.Conversation.ChatSettings.Title,
-                                await PeerPhotoDownloadAsync(Item.Conversation.Peer.Id)));
+                            await PhotoDownloadAsync(Item.Conversation.Peer.Id, path + @"\" + Item.Conversation.ChatSettings.Title);
                         }
                     }
                 }
@@ -234,22 +227,20 @@ namespace Overbeered.VkArchiver
             {
                 DebugLog("Error in VkArchiver:\n" + ex.Message);
             }
-
-            return listPeers;
         }
 
         /// <summary>
         /// Скачивает все фотографии из чата/диалога
         /// </summary>
         /// <param name="id">Индификатор чата/диалога</param>
-        /// <returns>Файлы загрузки</returns>
-        private async Task<IEnumerable<FileDownload>> PeerPhotoDownloadAsync(long id)
+        /// <param name="path">Путь для сохранения фотографий</param>
+        private async Task PhotoDownloadAsync(long id, string path)
         {
-            string next = string.Empty;
-            var listFileDownload = new List<FileDownload>();
-
             try
             {
+                string next = string.Empty;
+                Directory.CreateDirectory(path);
+
                 do
                 {
                     var messagesHistory = _vkApi.Messages.GetHistoryAttachments(new MessagesGetHistoryAttachmentsParams()
@@ -263,23 +254,46 @@ namespace Overbeered.VkArchiver
                     foreach (var history in messagesHistory)
                     {
                         var photo = (Photo)history.Attachment.Instance;
-                        listFileDownload.Add(new FileDownload(photo.Sizes[^1].Url.Segments[^1],
-                                await new HttpClient().GetStreamAsync(photo.Sizes[^1].Url)));
+                        var pathFile = path + @"\" + photo.Sizes[^1].Url.Segments[^1];
+
+                        using var stream = await new HttpClient().GetStreamAsync(photo.Sizes[^1].Url);
+                        if (stream != null)
+                        {
+                            using var fileStream = new FileStream(pathFile, FileMode.OpenOrCreate);
+                            await stream.CopyToAsync(fileStream);
+                        }
                     }
                 }
                 while (next != null);
+
+                ZipFile.CreateFromDirectory(path, path.Remove(path.Length - 1) + ".zip");
+                Directory.Delete(path, true);
             }
             catch (Exception ex)
             {
-                DebugLog("Error in VkArchiver:\n" + ex.Message);
+                if (ex.HResult == -2147024773) 
+                    await PhotoDownloadAsync(id, Filter(path));
+                else
+                    DebugLog("Error in VkArchiver:\n" + ex.Message);
             }
-
-            return listFileDownload;
         }
 
-        static void DebugLog(string format, params object?[] arg)
+        /// <summary>
+        /// Фильтр спецсимволов для создания директории
+        /// </summary>
+        /// <param name="str">Строка, для фильтрации</param>
+        /// <returns>Отфильтрованная строка</returns>
+        private static string Filter(string str)
         {
-            Console.WriteLine(format, arg);
+            var charsToRemove = new List<char>() { '/', ':', '*', '?', '"', '<', '>', '|' };
+            charsToRemove.ForEach(c => str = str.Replace(c.ToString(), String.Empty));
+            str = str.Insert(str.IndexOf('\\'), ":");
+            return str;
+        }
+
+        static void DebugLog(string format)
+        {
+            Console.WriteLine(format);
         }
     }
 }

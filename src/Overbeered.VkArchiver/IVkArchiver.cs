@@ -5,18 +5,19 @@
     /// </summary>
     public interface IVkArchiver
     {
-        /// <summary>
-        /// Возвращает все фотографии из всех чатов/диалогов в зависимости от флага
-        /// </summary>
-        /// <param name="from">Флаг</param>
-        /// <returns>Чаты/диалоги с файлами</returns>
-        Task<IEnumerable<Peer>> ArchivePhotosAsync(From from);
 
         /// <summary>
-        /// Возвращает фотографию из чата/диалога по его названию
+        /// Сохраняет все фотографии из всех чатов/диалогов в зависимости от флага
+        /// </summary>
+        /// <param name="from">Флаг</param>
+        /// <param name="path">Путь для сохранения фотографий</param>
+        Task ArchivePhotosAsync(From from, string path);
+
+        /// <summary>
+        /// Возвращает фотографию из чата/диалога по названию
         /// </summary>
         /// <param name="name">Название чата/диалога</param>
-        /// <returns>Чат/диалог с файлами</returns>
-        Task<Peer?> ArchivePhotosAsync(string name);
+        /// <param name="path">Путь для сохранения фотографий</param>
+        Task ArchivePhotosAsync(string name, string path);
     }
 }
