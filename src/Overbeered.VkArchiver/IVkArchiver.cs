@@ -9,15 +9,17 @@
         /// <summary>
         /// Сохраняет все фотографии из всех чатов/диалогов в зависимости от флага
         /// </summary>
-        /// <param name="from">Флаг</param>
         /// <param name="path">Путь для сохранения фотографий</param>
-        Task ArchivePhotosAsync(From from, string path);
+        /// <param name="fromPeer">Флаг</param>
+        /// <param name="fromMedia">Тип медиа</param>
+        Task ArchiveAsync(string path, FromPeer fromPeer = FromPeer.All, FromMedia fromMedia = FromMedia.Photo);
 
         /// <summary>
         /// Возвращает фотографию из чата/диалога по названию
         /// </summary>
-        /// <param name="name">Название чата/диалога</param>
         /// <param name="path">Путь для сохранения фотографий</param>
-        Task ArchivePhotosAsync(string name, string path);
+        /// <param name="name">Название чата/диалога</param>
+        /// <param name="fromMedia">Тип медиа</param>
+        Task ArchiveAsync(string path, string name, FromMedia fromMedia = FromMedia.Photo);
     }
 }

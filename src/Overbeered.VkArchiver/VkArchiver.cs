@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Overbeered.VkArchiver.Converters;
 using System.IO.Compression;
 using VkNet;
 using VkNet.AudioBypassService.Extensions;
-using VkNet.Enums.SafetyEnums;
 using VkNet.Model;
 using VkNet.Model.Attachments;
 using VkNet.Model.RequestParams;
@@ -50,28 +50,57 @@ namespace Overbeered.VkArchiver
             }
         }
 
-        public async Task ArchivePhotosAsync(From from, string path)
+        public async Task ArchiveAsync(string path, FromPeer fromPeer = FromPeer.All, FromMedia fromMedia = FromMedia.Photo)
         {
-            switch (from)
+            // Максимум в ВК можно сделать один запрос на 200 последних бесед
+            ulong? offset = 0;
+            long? count;
+            try
             {
-                case From.All:
-                    await ArchiveAllPhotosAsync(path);
-                    break;
-                case From.Dialogs:
-                    await ArchiveDialogsPhotosAsync(path);
-                    break;
-                case From.Chats:
-                    await ArchiveChatsPhotosAsync(path);
-                    break;
+                do
+                {
+                    var conversations = _vkApi.Messages.GetConversations(new GetConversationsParams()
+                    {
+                        Offset = offset,
+                        Count = 200,
+                    });
+                    offset += 200;
+                    count = conversations.Items.Count;
+
+                    foreach (var Item in conversations.Items)
+                    {
+                        string pathName = String.Empty;
+
+                        if (Item.Conversation.Peer.Type.ToString() == "chat" && (FromPeer.All == fromPeer || FromPeer.Chats == fromPeer))
+                        {
+                            pathName = path + @"\" + Item.Conversation.ChatSettings.Title;
+                        }
+
+                        if (Item.Conversation.Peer.Type.ToString() == "user" && (FromPeer.All == fromPeer || FromPeer.Dialogs == fromPeer))
+                        {
+                            var user = _vkApi.Users.Get(new long[] { Item.Conversation.Peer.Id });
+                            var userName = user[0].FirstName != "DELETED" ? $"{user[0].FirstName} {user[0].LastName}" : $"{Item.Conversation.Peer.Id}";
+                            pathName = path + @"\" + userName;
+                        }
+
+                        if (!string.IsNullOrEmpty(pathName)) await DownloadArchiveFileAsync(Item.Conversation.Peer.Id, pathName, fromMedia);
+                    }
+                }
+                while (count >= 200);
+            }
+            catch (Exception ex)
+            {
+                DebugLog("Error in VkArchiver:\n" + ex.Message);
             }
         }
 
-        public async Task ArchivePhotosAsync(string name, string path)
+        public async Task ArchiveAsync(string path, string name, FromMedia fromMedia = FromMedia.Photo)
         {
+            // Максимум в ВК можно сделать один запрос на 200 последних бесед
+            ulong? offset = 0;
+            long? count;
             try
             {
-                ulong? offset = 0;
-                long? count;
                 do
                 {
                     var conversations = _vkApi.Messages.GetConversations(new GetConversationsParams()
@@ -86,7 +115,7 @@ namespace Overbeered.VkArchiver
                     {
                         if (Item.Conversation.Peer.Type.ToString() == "chat" && Item.Conversation.ChatSettings.Title == name)
                         {
-                            await PhotoDownloadAsync(Item.Conversation.Peer.Id, path + @"\" + Item.Conversation.ChatSettings.Title);
+                            await DownloadArchiveFileAsync(Item.Conversation.Peer.Id, path + @"\" + Item.Conversation.ChatSettings.Title, fromMedia);
                             break;
                         }
 
@@ -97,127 +126,9 @@ namespace Overbeered.VkArchiver
 
                             if ($"{user[0].FirstName} {user[0].LastName}" == name)
                             {
-                                await PhotoDownloadAsync(Item.Conversation.Peer.Id, path + @"\" + userName);
+                                await DownloadArchiveFileAsync(Item.Conversation.Peer.Id, path + @"\" + userName, fromMedia);
                                 break;
                             }
-                        }
-                    }
-                }
-                while (count >= 200);
-            }
-            catch (Exception ex)
-            {
-                DebugLog("Error in VkArchiver:\n" + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Сохраняет все фотографии из всех чатов и диалогов
-        /// </summary>
-        /// <param name="path">Путь для сохранения фотографий</param>
-        private async Task ArchiveAllPhotosAsync(string path)
-        {
-            ulong? offset = 0;
-            long? count;
-            try
-            {
-                do
-                {
-                    var conversations = _vkApi.Messages.GetConversations(new GetConversationsParams()
-                    {
-                        Offset = offset,
-                        Count = 200,
-                    });
-                    offset += 200;
-                    count = conversations.Items.Count;
-
-                    foreach (var Item in conversations.Items)
-                    {
-                        if (Item.Conversation.Peer.Type.ToString() == "chat")
-                        {
-                            await PhotoDownloadAsync(Item.Conversation.Peer.Id, path + @"\" + Item.Conversation.ChatSettings.Title);
-                        }
-
-                        if (Item.Conversation.Peer.Type.ToString() == "user")
-                        {
-                            var user = _vkApi.Users.Get(new long[] { Item.Conversation.Peer.Id });
-                            var userName = user[0].FirstName != "DELETED" ? $"{user[0].FirstName} {user[0].LastName}" : $"{Item.Conversation.Peer.Id}";
-                            await PhotoDownloadAsync(Item.Conversation.Peer.Id, path + @"\" + userName);
-                        }
-
-                    }
-                }
-                while (count >= 200);
-            }
-            catch (Exception ex)
-            {
-                DebugLog("Error in VkArchiver:\n" + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Сохраняет все фотографии из всех диалогов
-        /// </summary>
-        /// <param name="path">Путь для сохранения фотографий</param>
-        private async Task ArchiveDialogsPhotosAsync(string path)
-        {
-            ulong? offset = 0;
-            long? count;
-            try
-            {
-                do
-                {
-                    var conversations = _vkApi.Messages.GetConversations(new GetConversationsParams()
-                    {
-                        Offset = offset,
-                        Count = 200,
-                    });
-                    offset += 200;
-                    count = conversations.Items.Count;
-
-                    foreach (var Item in conversations.Items)
-                    {
-                        if (Item.Conversation.Peer.Type.ToString() == "user")
-                        {
-                            var user = _vkApi.Users.Get(new long[] { Item.Conversation.Peer.Id });
-                            var userName = user[0].FirstName != "DELETED" ? $"{user[0].FirstName} {user[0].LastName}" : $"{Item.Conversation.Peer.Id}";
-                            await PhotoDownloadAsync(Item.Conversation.Peer.Id, path + @"\" + userName);
-                        }
-                    }
-                }
-                while (count >= 200);
-            }
-            catch (Exception ex)
-            {
-                DebugLog("Error in VkArchiver:\n" + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Сохраняет все фотографии из всех чатов
-        /// </summary>
-        /// <param name="path">Путь для сохранения фотографий</param>
-        private async Task ArchiveChatsPhotosAsync(string path)
-        {
-            ulong? offset = 0;
-            long? count;
-            try
-            {
-                do
-                {
-                    var conversations = _vkApi.Messages.GetConversations(new GetConversationsParams()
-                    {
-                        Offset = offset,
-                        Count = 200,
-                    });
-                    offset += 200;
-                    count = conversations.Items.Count;
-
-                    foreach (var Item in conversations.Items)
-                    {
-                        if (Item.Conversation.Peer.Type.ToString() == "chat")
-                        {
-                            await PhotoDownloadAsync(Item.Conversation.Peer.Id, path + @"\" + Item.Conversation.ChatSettings.Title);
                         }
                     }
                 }
@@ -234,47 +145,83 @@ namespace Overbeered.VkArchiver
         /// </summary>
         /// <param name="id">Индификатор чата/диалога</param>
         /// <param name="path">Путь для сохранения фотографий</param>
-        private async Task PhotoDownloadAsync(long id, string path)
+        /// <param name="fromMedia">Тип медиа</param>
+        private async Task DownloadArchiveFileAsync(long id, string path, FromMedia fromMedia)
         {
             try
             {
+                // Максимум в ВК можно сделать один запрос на 200 материалов диалога или беседы
                 string next = string.Empty;
                 Directory.CreateDirectory(path);
-
                 do
                 {
                     var messagesHistory = _vkApi.Messages.GetHistoryAttachments(new MessagesGetHistoryAttachmentsParams()
                     {
                         PeerId = id,
-                        MediaType = MediaType.Photo,
+                        MediaType = MediaTypeConverter.Converter(fromMedia),
                         Count = 200,
                         StartFrom = next,
                     }, out next);
 
                     foreach (var history in messagesHistory)
                     {
-                        var photo = (Photo)history.Attachment.Instance;
-                        var pathFile = path + @"\" + photo.Sizes[^1].Url.Segments[^1];
-
-                        using var stream = await new HttpClient().GetStreamAsync(photo.Sizes[^1].Url);
-                        if (stream != null)
-                        {
-                            using var fileStream = new FileStream(pathFile, FileMode.OpenOrCreate);
-                            await stream.CopyToAsync(fileStream);
-                        }
+                        var (uri, name) = UriDownloadFile(fromMedia, history);
+                        await DownloadFileAsync(uri!, path + @"\" + name);
                     }
                 }
-                while (next != null);
+                while (!string.IsNullOrEmpty(next));
 
-                ZipFile.CreateFromDirectory(path, path.Remove(path.Length - 1) + ".zip");
+                ZipFile.CreateFromDirectory(path, path.Remove(path.Length) + ".zip");
                 Directory.Delete(path, true);
             }
             catch (Exception ex)
             {
-                if (ex.HResult == -2147024773) 
-                    await PhotoDownloadAsync(id, Filter(path));
+                if (ex.HResult == -2147024773 || ex.HResult == -2147024893)
+                {
+                    await DownloadArchiveFileAsync(id, Filter(path), fromMedia);
+                }
+                if (ex.HResult == -2147024816)
+                {
+                    ZipFile.CreateFromDirectory(path, path.Remove(path.Length) + "_" + id + ".zip");
+                    Directory.Delete(path, true);
+                }
                 else
                     DebugLog("Error in VkArchiver:\n" + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Получение URI и имя файла
+        /// </summary>
+        /// <param name="fromMedia">Тип медиа</param>
+        /// <param name="historyAttachment">История файлов</param>
+        /// <returns>URI и имя файла</returns>
+        private static (Uri?, string) UriDownloadFile(FromMedia fromMedia, HistoryAttachment historyAttachment)
+        {
+            switch (fromMedia)
+            {
+                case FromMedia.Photo:
+                    var photo = (Photo)historyAttachment.Attachment.Instance;
+                    return (photo.Sizes[^1].Url, photo.Sizes[^1].Url.Segments[^1]);
+                case FromMedia.Doc:
+                    var doc = (Document)historyAttachment.Attachment.Instance;
+                    return (new Uri(doc.Uri), doc.Title);
+                default: return (null, string.Empty);
+            };
+        }
+
+        /// <summary>
+        /// Скачивание файла
+        /// </summary>
+        /// <param name="uri">Ссылка на скачивание файла</param>
+        /// <param name="pathFile">Путь для сохранения файла с именем и расширением</param>
+        private static async Task DownloadFileAsync(Uri uri, string pathFile)
+        {
+            using var stream = await new HttpClient().GetStreamAsync(uri);
+            if (stream != null)
+            {
+                using var fileStream = new FileStream(pathFile, FileMode.OpenOrCreate);
+                await stream.CopyToAsync(fileStream);
             }
         }
 
@@ -285,7 +232,7 @@ namespace Overbeered.VkArchiver
         /// <returns>Отфильтрованная строка</returns>
         private static string Filter(string str)
         {
-            var charsToRemove = new List<char>() { '/', ':', '*', '?', '"', '<', '>', '|' };
+            var charsToRemove = new List<char>() { '/', ':', '*', '?', '"', '<', '>', '|', '.' };
             charsToRemove.ForEach(c => str = str.Replace(c.ToString(), String.Empty));
             str = str.Insert(str.IndexOf('\\'), ":");
             return str;
