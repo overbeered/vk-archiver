@@ -35,18 +35,9 @@ namespace Overbeered.VkArchiver
         /// </summary>
         private readonly ILogger<T> _logger;
 
-        public VkArchiver(string login, string password, ulong applicationId = 8206863) : this(login, password, NullLogger<T>.Instance)
+        public VkArchiver(string login, string password) : this(login, password, NullLogger<T>.Instance)
         {
-            Login = login;
-            Password = password;
-            ApplicationId = applicationId;
-            _vkApi = new VkApi(new ServiceCollection().AddAudioBypass());
-            _vkApi.Authorize(new ApiAuthParams()
-            {
-                ApplicationId = ApplicationId,
-                Login = Login,
-                Password = Password,
-            });
+
         }
 
         public VkArchiver(string login, string password, ILogger<T> logger, ulong applicationId = 8206863)
