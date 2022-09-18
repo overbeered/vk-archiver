@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Overbeered.VkArchiver.Converters;
 using System.IO.Compression;
 using VkNet;
@@ -9,7 +11,7 @@ using VkNet.Model.RequestParams;
 
 namespace Overbeered.VkArchiver
 {
-    public class VkArchiver : IVkArchiver
+    public class VkArchiver<T> : IVkArchiver
     {
         private readonly VkApi _vkApi;
 
@@ -28,13 +30,32 @@ namespace Overbeered.VkArchiver
         /// </summary>
         public ulong ApplicationId { get; private set; }
 
-        public VkArchiver(string login, string password, ulong applicationId = 8206863)
+        /// <summary>
+        /// Логгер
+        /// </summary>
+        private readonly ILogger<T> _logger;
+
+        public VkArchiver(string login, string password, ulong applicationId = 8206863) : this(login, password, NullLogger<T>.Instance)
         {
             Login = login;
             Password = password;
             ApplicationId = applicationId;
             _vkApi = new VkApi(new ServiceCollection().AddAudioBypass());
+            _vkApi.Authorize(new ApiAuthParams()
+            {
+                ApplicationId = ApplicationId,
+                Login = Login,
+                Password = Password,
+            });
+        }
 
+        public VkArchiver(string login, string password, ILogger<T> logger, ulong applicationId = 8206863)
+        {
+            Login = login;
+            Password = password;
+            ApplicationId = applicationId;
+            _vkApi = new VkApi(new ServiceCollection().AddAudioBypass());
+            _logger = logger;
             try
             {
                 _vkApi.Authorize(new ApiAuthParams()
@@ -46,7 +67,7 @@ namespace Overbeered.VkArchiver
             }
             catch (Exception ex)
             {
-                DebugLog("Error in VkArchiver:\n" + ex.Message);
+                _logger.LogError(ex, "Error in VkArchiver");
             }
         }
 
@@ -90,7 +111,7 @@ namespace Overbeered.VkArchiver
             }
             catch (Exception ex)
             {
-                DebugLog("Error in VkArchiver:\n" + ex.Message);
+                _logger.LogError(ex, "Error in VkArchiver");
             }
         }
 
@@ -136,7 +157,7 @@ namespace Overbeered.VkArchiver
             }
             catch (Exception ex)
             {
-                DebugLog("Error in VkArchiver:\n" + ex.Message);
+                _logger.LogError(ex, "Error in VkArchiver");
             }
         }
 
@@ -186,7 +207,7 @@ namespace Overbeered.VkArchiver
                     Directory.Delete(path, true);
                 }
                 else
-                    DebugLog("Error in VkArchiver:\n" + ex.Message);
+                    _logger.LogError(ex, "Error in VkArchiver");
             }
         }
 
@@ -236,11 +257,6 @@ namespace Overbeered.VkArchiver
             charsToRemove.ForEach(c => str = str.Replace(c.ToString(), String.Empty));
             str = str.Insert(str.IndexOf('\\'), ":");
             return str;
-        }
-
-        static void DebugLog(string format)
-        {
-            Console.WriteLine(format);
         }
     }
 }
