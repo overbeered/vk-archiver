@@ -1,6 +1,8 @@
 ﻿namespace Overbeered.VkArchiver
 {
-
+    /// <summary>
+    /// Тип медиа
+    /// </summary>
     public enum FromMedia
     {
         /// <summary>

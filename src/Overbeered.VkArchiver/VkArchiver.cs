@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Overbeered.VkArchiver.Converters;
 using System.IO.Compression;
 using VkNet;
@@ -11,7 +12,7 @@ using VkNet.Model.RequestParams;
 
 namespace Overbeered.VkArchiver
 {
-    public class VkArchiver<T> : IVkArchiver
+    public class VkArchiver : IVkArchiver
     {
         private readonly VkApi _vkApi;
 
@@ -33,18 +34,23 @@ namespace Overbeered.VkArchiver
         /// <summary>
         /// Логгер
         /// </summary>
-        private readonly ILogger<T> _logger;
+        private readonly ILogger<VkArchiver> _logger;
 
-        public VkArchiver(string login, string password) : this(login, password, NullLogger<T>.Instance)
+        public VkArchiver(string login, string password) : this(login, password, NullLogger<VkArchiver>.Instance)
         {
 
         }
 
-        public VkArchiver(string login, string password, ILogger<T> logger, ulong applicationId = 8206863)
+        public VkArchiver(string login, string password, ILogger<VkArchiver> logger)
         {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json").Build();
+            var application = config.GetSection(nameof(Application)).Get<Application>();
+
             Login = login;
             Password = password;
-            ApplicationId = applicationId;
+            ApplicationId = application.Id;
             _vkApi = new VkApi(new ServiceCollection().AddAudioBypass());
             _logger = logger;
             try
@@ -85,14 +91,14 @@ namespace Overbeered.VkArchiver
 
                         if (Item.Conversation.Peer.Type.ToString() == "chat" && (FromPeer.All == fromPeer || FromPeer.Chats == fromPeer))
                         {
-                            pathName = path + @"\" + Item.Conversation.ChatSettings.Title;
+                            pathName = string.Concat(path, @"\", Item.Conversation.ChatSettings.Title);
                         }
 
                         if (Item.Conversation.Peer.Type.ToString() == "user" && (FromPeer.All == fromPeer || FromPeer.Dialogs == fromPeer))
                         {
                             var user = _vkApi.Users.Get(new long[] { Item.Conversation.Peer.Id });
                             var userName = user[0].FirstName != "DELETED" ? $"{user[0].FirstName} {user[0].LastName}" : $"{Item.Conversation.Peer.Id}";
-                            pathName = path + @"\" + userName;
+                            pathName = string.Concat(path, @"\", userName);
                         }
 
                         if (!string.IsNullOrEmpty(pathName)) await DownloadArchiveFileAsync(Item.Conversation.Peer.Id, pathName, fromMedia);
@@ -127,7 +133,9 @@ namespace Overbeered.VkArchiver
                     {
                         if (Item.Conversation.Peer.Type.ToString() == "chat" && Item.Conversation.ChatSettings.Title == name)
                         {
-                            await DownloadArchiveFileAsync(Item.Conversation.Peer.Id, path + @"\" + Item.Conversation.ChatSettings.Title, fromMedia);
+                            await DownloadArchiveFileAsync(Item.Conversation.Peer.Id,
+                                string.Concat(path, @"\", Item.Conversation.ChatSettings.Title),
+                                fromMedia);
                             break;
                         }
 
@@ -138,7 +146,9 @@ namespace Overbeered.VkArchiver
 
                             if ($"{user[0].FirstName} {user[0].LastName}" == name)
                             {
-                                await DownloadArchiveFileAsync(Item.Conversation.Peer.Id, path + @"\" + userName, fromMedia);
+                                await DownloadArchiveFileAsync(Item.Conversation.Peer.Id,
+                                    string.Concat(path, @"\", userName),
+                                    fromMedia);
                                 break;
                             }
                         }
@@ -177,48 +187,51 @@ namespace Overbeered.VkArchiver
 
                     foreach (var history in messagesHistory)
                     {
-                        var (uri, name) = UriDownloadFile(fromMedia, history);
-                        await DownloadFileAsync(uri!, path + @"\" + name);
+                        var uriFile = UriDownloadFile(fromMedia, history);
+                        if (uriFile != null) await DownloadFileAsync(uriFile.Uri!, string.Concat(path, @"\", uriFile.Name));
                     }
                 }
                 while (!string.IsNullOrEmpty(next));
 
-                ZipFile.CreateFromDirectory(path, path.Remove(path.Length) + ".zip");
+                ZipFile.CreateFromDirectory(path, string.Concat(path.Remove(path.Length), ".zip"));
+                Directory.Delete(path, true);
+            }
+            // -2147024773 Неверный синтаксис имени файла, имени каталога или метки тома
+            // -2147024893 Системе не удается найти указанный путь
+            catch (Exception ex) when (ex.HResult == -2147024773 || ex.HResult == -2147024893)
+            {
+                await DownloadArchiveFileAsync(id, Filter.Directories(path), fromMedia);
+            }
+            // -2147024816 Файл существует
+            catch (Exception ex) when (ex.HResult == -2147024816)
+            {
+                ZipFile.CreateFromDirectory(path, string.Concat(path.Remove(path.Length), "_", id, ".zip"));
                 Directory.Delete(path, true);
             }
             catch (Exception ex)
             {
-                if (ex.HResult == -2147024773 || ex.HResult == -2147024893)
-                {
-                    await DownloadArchiveFileAsync(id, Filter(path), fromMedia);
-                }
-                if (ex.HResult == -2147024816)
-                {
-                    ZipFile.CreateFromDirectory(path, path.Remove(path.Length) + "_" + id + ".zip");
-                    Directory.Delete(path, true);
-                }
-                else
-                    _logger.LogError(ex, "Error in VkArchiver");
+                _logger.LogError(ex, "Error in VkArchiver");
             }
         }
 
         /// <summary>
-        /// Получение URI и имя файла
+        /// URI и имя скачанного файла
         /// </summary>
         /// <param name="fromMedia">Тип медиа</param>
         /// <param name="historyAttachment">История файлов</param>
-        /// <returns>URI и имя файла</returns>
-        private static (Uri?, string) UriDownloadFile(FromMedia fromMedia, HistoryAttachment historyAttachment)
+        /// <returns>URI и имя скачанного файла</returns>
+        private static UriFile UriDownloadFile(FromMedia fromMedia, HistoryAttachment historyAttachment)
         {
             switch (fromMedia)
             {
                 case FromMedia.Photo:
                     var photo = (Photo)historyAttachment.Attachment.Instance;
-                    return (photo.Sizes[^1].Url, photo.Sizes[^1].Url.Segments[^1]);
+                    return new UriFile(photo.Sizes[^1].Url, photo.Sizes[^1].Url.Segments[^1]);
                 case FromMedia.Doc:
                     var doc = (Document)historyAttachment.Attachment.Instance;
-                    return (new Uri(doc.Uri), doc.Title);
-                default: return (null, string.Empty);
+                    return new UriFile(new Uri(doc.Uri), doc.Title);
+                default:
+                    return new UriFile(null, string.Empty);
             };
         }
 
@@ -229,25 +242,13 @@ namespace Overbeered.VkArchiver
         /// <param name="pathFile">Путь для сохранения файла с именем и расширением</param>
         private static async Task DownloadFileAsync(Uri uri, string pathFile)
         {
-            using var stream = await new HttpClient().GetStreamAsync(uri);
+            using var httpClient = new HttpClient();
+            using var stream = await httpClient.GetStreamAsync(uri);
             if (stream != null)
             {
                 using var fileStream = new FileStream(pathFile, FileMode.OpenOrCreate);
                 await stream.CopyToAsync(fileStream);
             }
-        }
-
-        /// <summary>
-        /// Фильтр спецсимволов для создания директории
-        /// </summary>
-        /// <param name="str">Строка, для фильтрации</param>
-        /// <returns>Отфильтрованная строка</returns>
-        private static string Filter(string str)
-        {
-            var charsToRemove = new List<char>() { '/', ':', '*', '?', '"', '<', '>', '|', '.' };
-            charsToRemove.ForEach(c => str = str.Replace(c.ToString(), String.Empty));
-            str = str.Insert(str.IndexOf('\\'), ":");
-            return str;
         }
     }
 }

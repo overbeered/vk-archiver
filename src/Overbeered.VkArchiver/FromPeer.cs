@@ -1,5 +1,8 @@
 ﻿namespace Overbeered.VkArchiver
 {
+    /// <summary>
+    /// Флаг чата/диалога
+    /// </summary>
     public enum FromPeer
     {
         /// <summary>
