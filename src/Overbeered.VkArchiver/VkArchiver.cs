@@ -244,11 +244,8 @@ namespace Overbeered.VkArchiver
         {
             using var httpClient = new HttpClient();
             using var stream = await httpClient.GetStreamAsync(uri);
-            if (stream != null)
-            {
-                using var fileStream = new FileStream(pathFile, FileMode.OpenOrCreate);
-                await stream.CopyToAsync(fileStream);
-            }
+            using var fileStream = new FileStream(pathFile, FileMode.OpenOrCreate);
+            await stream.CopyToAsync(fileStream);
         }
     }
 }
