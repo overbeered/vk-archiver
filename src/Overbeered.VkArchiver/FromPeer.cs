@@ -1,23 +1,22 @@
-﻿namespace Overbeered.VkArchiver
+﻿namespace Overbeered.VkArchiver;
+
+/// <summary>
+/// Флаг чата/диалога
+/// </summary>
+public enum FromPeer
 {
     /// <summary>
-    /// Флаг чата/диалога
+    /// Чаты/диалоги
     /// </summary>
-    public enum FromPeer
-    {
-        /// <summary>
-        /// Чаты/диалоги
-        /// </summary>
-        All = 0,
+    All = 0,
 
-        /// <summary>
-        /// Диалоги
-        /// </summary>
-        Dialogs = 1,
+    /// <summary>
+    /// Диалоги
+    /// </summary>
+    Dialogs = 1,
 
-        /// <summary>
-        /// Чаты
-        /// </summary>
-        Chats = 2
-    }
+    /// <summary>
+    /// Чаты
+    /// </summary>
+    Chats = 2
 }
