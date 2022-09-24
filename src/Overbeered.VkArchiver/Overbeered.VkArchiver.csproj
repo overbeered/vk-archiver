@@ -10,6 +10,17 @@
     <NeutralLanguage>ru</NeutralLanguage>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
   </PropertyGroup>
+  
+  <PropertyGroup>
+    <Title>Overbeered.VkArchiver</Title>
+    <Description>Приложение создает архив, название диалога или беседы, с загруженными фотографиями или документами.</Description>
+    <Authors>Overbeered</Authors>
+    <PackageTags>Overbeered; VkArchiver</PackageTags>
+    <PackageVersion>1.1.1</PackageVersion>
+    <PackageId>Overbeered.VkArchiver</PackageId>
+    <AssemblyName>Overbeered.VkArchiver</AssemblyName>
+    <RootNamespace>Overbeered.VkArchiver</RootNamespace>
+  </PropertyGroup>
 
   <ItemGroup>
     <None Include="..\..\LICENSE">
@@ -17,7 +28,7 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
