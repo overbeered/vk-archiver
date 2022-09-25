@@ -18,20 +18,13 @@ public class VkArchiver : IVkArchiver
     /// </summary>
     private readonly VkApi _vkApi;
 
-    /// <summary>
-    /// E-mail или телефон
-    /// </summary>
     public string? Login { get; set; }
 
-    /// <summary>
-    /// Пароль для авторизации
-    /// </summary>
     public string? Password { get; set; }
 
-    /// <summary>
-    /// ID приложения
-    /// </summary>
     public ulong? ApplicationId { get; set; }
+
+    public string? Token { get => _vkApi.Token; set => Token = value; }
 
     /// <summary>
     /// Логгер
@@ -61,6 +54,14 @@ public class VkArchiver : IVkArchiver
             ApplicationId = ApplicationId!.Value,
             Login = Login,
             Password = Password,
+        });
+    }
+
+    public async Task AuthorizeAsync(string token)
+    {
+        await _vkApi.AuthorizeAsync(new ApiAuthParams()
+        {
+            AccessToken = token,
         });
     }
 

@@ -1,10 +1,31 @@
-﻿namespace Overbeered.VkArchiver;
+﻿using VkNet;
+
+namespace Overbeered.VkArchiver;
 
 /// <summary>
 /// Архиватор
 /// </summary>
 public interface IVkArchiver
 {
+    /// <summary>
+    /// E-mail или телефон
+    /// </summary>
+    public string? Login { get; set; }
+
+    /// <summary>
+    /// Пароль для авторизации
+    /// </summary>
+    public string? Password { get; set; }
+
+    /// <summary>
+    /// ID приложения
+    /// </summary>
+    public ulong? ApplicationId { get; set; }
+
+    /// <summary>
+    /// Токен
+    /// </summary>
+    public string? Token { get; set; }
 
     /// <summary>
     /// Сохраняет все файлы из всех чатов/диалогов в зависимости от флага и типа медии
@@ -26,6 +47,12 @@ public interface IVkArchiver
     /// Авторизация
     /// </summary>
     Task AuthorizeAsync();
+
+    /// <summary>
+    /// Авторизация по токену
+    /// </summary>
+    /// <param name="token">Токен</param>
+    Task AuthorizeAsync(string token);
 
     /// <summary>
     /// Создает билдер
