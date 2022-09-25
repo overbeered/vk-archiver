@@ -16,7 +16,7 @@
     <Description>Приложение создает архив, название диалога или беседы, с загруженными фотографиями или документами.</Description>
     <Authors>Overbeered</Authors>
     <PackageTags>Overbeered; VkArchiver</PackageTags>
-    <PackageVersion>1.1.1</PackageVersion>
+    <PackageVersion>1.1.2</PackageVersion>
     <PackageId>Overbeered.VkArchiver</PackageId>
     <AssemblyName>Overbeered.VkArchiver</AssemblyName>
     <RootNamespace>Overbeered.VkArchiver</RootNamespace>
