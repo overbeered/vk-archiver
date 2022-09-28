@@ -18,10 +18,19 @@ public class VkArchiver : IVkArchiver
     /// </summary>
     private readonly VkApi _vkApi;
 
+    /// <summary>
+    /// Логин
+    /// </summary>
     public string? Login { get; set; }
 
+    /// <summary>
+    /// Пароль
+    /// </summary>
     public string? Password { get; set; }
 
+    /// <summary>
+    /// Id приложения в VK
+    /// </summary>
     public ulong? ApplicationId { get; set; }
 
     public string? Token { get => _vkApi.Token; set => Token = value; }
@@ -33,18 +42,12 @@ public class VkArchiver : IVkArchiver
 
     public VkArchiver() : this(NullLogger<VkArchiver>.Instance)
     {
-
     }
 
     public VkArchiver(ILogger<VkArchiver> logger)
     {
         _vkApi = new VkApi(new ServiceCollection().AddAudioBypass());
         _logger = logger;
-    }
-
-    public VkArchiverBuilder CreateBuilder()
-    {
-        return new VkArchiverBuilder();
     }
 
     public async Task AuthorizeAsync()
@@ -63,6 +66,11 @@ public class VkArchiver : IVkArchiver
         {
             AccessToken = token,
         });
+    }
+
+    public async Task LogOutAsync()
+    {
+        await _vkApi.LogOutAsync();
     }
 
     public async Task ArchiveAsync(string path, FromPeer fromPeer = FromPeer.All, FromMedia fromMedia = FromMedia.Photo)
@@ -157,6 +165,11 @@ public class VkArchiver : IVkArchiver
         {
             _logger.LogError(ex, "Error in VkArchiver");
         }
+    }
+
+    public VkArchiverBuilder CreateBuilder()
+    {
+        return new VkArchiverBuilder();
     }
 
     /// <summary>
