@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.9" />
+    <PackageReference Include="Overbeered.VkArchiver" Version="1.1.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datatransfer\Overbeered.VkArchiver.Datatransfer.HttpDto\Overbeered.VkArchiver.Datatransfer.HttpDto.csproj" />
+    <ProjectReference Include="..\Overbeered.VkArchiver.Core\Overbeered.VkArchiver.Core.csproj" />
+    <ProjectReference Include="..\Services\Overbeered.VkArchiver.Services.AuthService\Overbeered.VkArchiver.Services.AuthService.csproj" />
+    <ProjectReference Include="..\Services\Overbeered.VkArchiver.Services.VkArchiverService\Overbeered.VkArchiver.Services.VkArchiverService.csproj" />
+  </ItemGroup>
+
+</Project>
