@@ -1,6 +1,6 @@
 # **vk-archiver**
 
-Приложение использует библиотеку [VkNet.AudioBypass](https://github.com/flowersne/VkNet.AudioBypass), расширение библиотеки [Vk Api for .NET](https://github.com/vknet/vk) для обхода ограничения к методам Audio и Messages.
+Приложение использует библиотеку [VkNet.AudioBypass](https://github.com/flowersne/VkNet.AudioBypass), расширение библиотеки [Vk Api for .NET](https://github.com/vknet/vk) для обхода ограничения к методам Audio и Messages. [Nugget](https://www.nuget.org/packages/Overbeered.VkArchiver)
 
 ## **Что делает?**
 
