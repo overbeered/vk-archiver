@@ -13,7 +13,11 @@
 Без логгера
 ```c#
 ...
-var vk = new VkArchiver().CreateBuilder().SetLogin("login").SetPassword("password").SetApplicationId(8206863).Build();
+var vkBuilder = new VkArchiverBuilder();
+var vk = vkBuilder.SetLogin("login")
+    .SetPassword("password")
+    .SetApplicationId(8206863)
+    .Build();
 
 await vk.AuthorizeAsync();
 await vk.ArchiveAsync(@"D:\test");
@@ -23,10 +27,15 @@ await vk.ArchiveAsync(@"D:\test");
 ```c#
 ...
 using var log = new LoggerConfiguration()
-    .WriteTo.Console()
+    .WriteTo
+    .Console()
     .CreateLogger();
+var vkBuilder = new VkArchiverBuilder(log);
 
-var vk = new VkArchiver(log).CreateBuilder().SetLogin("login").SetPassword("password").SetApplicationId(8206863).Build();
+var vk = vkBuilder.SetLogin("login")
+    .SetPassword("password")
+    .SetApplicationId(8206863)
+    .Build();
 
 await vk.AuthorizeAsync();
 await vk.ArchiveAsync(@"D:\test", "Name");
@@ -35,6 +44,7 @@ await vk.ArchiveAsync(@"D:\test", "Name");
 В ASP Startup:
 ```c#
 ...
+services.AddTransient<VkArchiverBuilder>();
 services.AddTransient<IVkArchiver, VkArchiver>();
 ...
 ```

@@ -1,4 +1,7 @@
-﻿namespace Overbeered.VkArchiver;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace Overbeered.VkArchiver;
 
 /// <summary>
 /// Билдер для вк Архиватора
@@ -7,9 +10,13 @@ public class VkArchiverBuilder
 {
     private VkArchiver _vkArchiver;
 
-    public VkArchiverBuilder()
+    public VkArchiverBuilder() : this(NullLogger<VkArchiver>.Instance)
     {
-        _vkArchiver = new VkArchiver();
+    }
+
+    public VkArchiverBuilder(ILogger<VkArchiver> logger)
+    {
+        _vkArchiver = new VkArchiver(logger);
     }
 
     public VkArchiverBuilder SetLogin(string login)

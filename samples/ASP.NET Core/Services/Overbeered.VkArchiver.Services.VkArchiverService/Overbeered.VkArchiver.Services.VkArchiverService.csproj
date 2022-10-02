@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Overbeered.VkArchiver" Version="1.1.3" />
+    <PackageReference Include="Overbeered.VkArchiver" Version="1.1.4" />
   </ItemGroup>
   
   <ItemGroup>

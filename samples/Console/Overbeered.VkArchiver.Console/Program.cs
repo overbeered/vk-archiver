@@ -8,8 +8,7 @@ internal class Program
     {
         using var loggerFactory = LoggerFactory.Create(builder =>
         {
-            builder
-                .AddFilter("Microsoft", LogLevel.Warning)
+            builder.AddFilter("Microsoft", LogLevel.Warning)
                 .AddFilter("System", LogLevel.Warning)
                 .AddFilter("NonHostConsoleApp.Program", LogLevel.Debug)
                 .AddConsole();
@@ -20,6 +19,7 @@ internal class Program
         string password;
         string name;
         FromMedia? media;
+        var vkBuilder = new VkArchiverBuilder(logVk);
 
         logProgram.LogInformation("Введите login:");
         login = System.Console.ReadLine()!;
@@ -30,7 +30,11 @@ internal class Program
         logProgram.LogInformation("Введите mediaType (photo или doc):");
         media = FromMediaConverter.Converter(System.Console.ReadLine()!)!;
 
-        var vk = new VkArchiver(logVk).CreateBuilder().SetLogin(login).SetPassword(password).SetApplicationId(8206863).Build();
+        var vk = vkBuilder.SetLogin(login)
+            .SetPassword(password)
+            .SetApplicationId(8206863)
+            .Build();
+        
         await vk.AuthorizeAsync();
         await vk.ArchiveAsync(@"D:\test", name, media.Value);
         await vk.LogOutAsync();

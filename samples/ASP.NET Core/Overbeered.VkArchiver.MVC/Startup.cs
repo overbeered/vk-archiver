@@ -18,6 +18,7 @@ public class Startup
     {
         services.AddMvc();
         services.AddTransient<IVkArchiver, VkArchiver>();
+        services.AddTransient<VkArchiverBuilder>();
         services.AddTransient<IAuthService, AuthService>();
         services.AddTransient<IVkArchiverService, VkArchiverService>();
     }

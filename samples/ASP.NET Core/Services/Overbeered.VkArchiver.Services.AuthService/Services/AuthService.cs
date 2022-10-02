@@ -5,16 +5,20 @@ namespace Overbeered.VkArchiver.Services.AuthService.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly IVkArchiver _vkArchiver;
+    private readonly VkArchiverBuilder _vkBuilder;
 
-    public AuthService(IVkArchiver vkArchiver)
+    public AuthService(VkArchiverBuilder vkBuilder)
     {
-        _vkArchiver = vkArchiver;
+        _vkBuilder = vkBuilder;
     }
 
     public async Task<AuthData> CreateTokenAsync(string login, string password, ulong applicationId)
     {
-        var vk = _vkArchiver.CreateBuilder().SetLogin(login).SetPassword(password).SetApplicationId(applicationId).Build();
+        var vk = _vkBuilder.SetLogin(login)
+            .SetPassword(password)
+            .SetApplicationId(applicationId)
+            .Build();
+        
         await vk.AuthorizeAsync();
         var token = vk.Token;
         await vk.LogOutAsync();

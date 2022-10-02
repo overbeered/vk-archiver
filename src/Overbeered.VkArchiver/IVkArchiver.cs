@@ -35,16 +35,10 @@ public interface IVkArchiver
     Task ArchiveAsync(string path, FromPeer fromPeer = FromPeer.All, FromMedia fromMedia = FromMedia.Photo);
 
     /// <summary>
-    /// Сохраняет все файлы по названию чата/диалога в зависимости от типа меди
+    /// Сохраняет все файлы по названию чата/диалога в зависимости от типа медии
     /// </summary>
     /// <param name="path">Путь для сохранения файлов</param>
     /// <param name="name">Название чата/диалога</param>
     /// <param name="fromMedia">Тип медиа</param>
     Task ArchiveAsync(string path, string name, FromMedia fromMedia = FromMedia.Photo);
-
-    /// <summary>
-    /// Создает билдер
-    /// </summary>
-    /// <returns>Билдер</returns>
-    VkArchiverBuilder CreateBuilder();
 }

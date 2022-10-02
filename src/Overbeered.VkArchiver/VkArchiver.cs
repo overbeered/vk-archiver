@@ -167,11 +167,6 @@ public class VkArchiver : IVkArchiver
         }
     }
 
-    public VkArchiverBuilder CreateBuilder()
-    {
-        return new VkArchiverBuilder();
-    }
-
     /// <summary>
     /// Скачивает все фотографии из чата/диалога
     /// </summary>
