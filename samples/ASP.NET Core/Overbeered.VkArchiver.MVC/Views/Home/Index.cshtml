@@ -1,0 +1,96 @@
+﻿@{
+    ViewData["Title"] = "Авторизация";
+}
+
+<div class="shadow p-3 mb-5 bg-white rounded" style="position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);">
+
+    <div class="text-center">
+        <h1 class="mb-3">Авторизация в ВК</h1>
+        <p class="mb-3 text-danger" style="display:none;" id="error">Форма не заполнена или заполнена не правильно</p>
+        <p class="mb-3 text-danger" style="display:none;" id="badServer">Исключение на сервере</p>
+        <p class="mb-3 text-danger" style="display:none;" id="badRequest">Значения невалидны</p>
+    </div>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Логин</span>
+            </div>
+            <input type="text" id="login" name="Login" class="form-control" aria-label="Sizing example input"
+                   aria-describedby="inputGroup-sizing-default" required/>
+        </div>
+
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Пароль</span>
+            </div>
+            <input type="password" id="password" name="Password" class="form-control" aria-label="Sizing example input"
+                   aria-describedby="inputGroup-sizing-default"
+                   placeholder="******"/>
+        </div>
+
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Id приложения</span>
+            </div>
+            <input type="number" id="applicationId" name="ApplicationId" class="form-control" aria-label="Sizing example input"
+                   aria-describedby="inputGroup-sizing-default"/>
+        </div>
+    <input type="submit" id="submitLogin" class="btn btn-primary btn-lg btn-block mb-2" value="Войти" />
+</div>
+
+<script >
+    var tokenKey = "accessToken";
+
+    async function getTokenAsync() {
+        const formData = new FormData();
+        let login = document.getElementById("login").value;
+        let password = document.getElementById("password").value;
+        let applicationId = document.getElementById("applicationId").value;
+
+        if (login === '' || password === '' || applicationId === '' || !validateNumber(applicationId)) {
+            let error = document.getElementById("error");
+            error.style.display = "block";
+        }
+
+        formData.append("Login", login);
+        formData.append("Password", password);
+        formData.append("ApplicationId", applicationId);
+
+        const response = await fetch("/home/login", {
+            method: "POST",
+            body: formData
+        });
+
+        if (response.ok === true) {
+            const data = await response.json();
+            sessionStorage.setItem(tokenKey, data.access_token);
+            return true;
+        } else if (response.status === 400) {
+            let error = document.getElementById("badRequest");
+            error.style.display = "block";
+        } else if (response.status === 500) {
+            let error = document.getElementById("badServer");
+            error.style.display = "block";
+        }
+        
+        return false;
+    };
+
+    function getData(url) {
+        const token = sessionStorage.getItem(tokenKey);
+        document.cookie = token;
+        window.location = url;
+    };
+
+    function validateNumber(number) {
+        let re = /^[0-9]*$/;
+        return re.test(String(number));
+    }
+
+    document.getElementById("submitLogin").addEventListener("click", async e => {
+        e.preventDefault();
+        if (await getTokenAsync()) getData("/archiver");
+    });
+</script>

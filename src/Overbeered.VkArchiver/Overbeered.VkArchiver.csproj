@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <NeutralLanguage>ru</NeutralLanguage>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <Title>Overbeered.VkArchiver</Title>
+    <Description>Приложение создает архив, название диалога или беседы, с загруженными фотографиями или документами.</Description>
+    <Authors>Overbeered</Authors>
+    <PackageTags>Overbeered; VkArchiver</PackageTags>
+    <PackageVersion>1.1.4</PackageVersion>
+    <PackageId>Overbeered.VkArchiver</PackageId>
+    <AssemblyName>Overbeered.VkArchiver</AssemblyName>
+    <RootNamespace>Overbeered.VkArchiver</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
+    <PackageReference Include="VkNet.AudioBypassService" Version="1.7.3" />
+  </ItemGroup>
+</Project>

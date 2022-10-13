@@ -1,0 +1,199 @@
+﻿@{
+    ViewData["Title"] = "Авторизация";
+}
+
+<div class="container">
+    <main>
+
+        <div class="py-3 text-center">
+            <h2>Описание</h2>
+            <p class="lead">Архивация 1: сохраняет все файлы из всех чатов/диалогов в зависимости от флага и типа медии</p>
+            <p class="lead">Архивация 2: сохраняет все файлы в зависимости от флага и типа меди по названию чата/диалога</p>
+        </div>
+        
+        <div class="row g-5">
+            <select class="form-select mx-auto mb-3" onchange="optionCheck()" aria-label="Default select example" id="options">
+                <option selected>Выберите способ архивации</option>
+                <option value="1">Всех чатов/диалогов в зависимости от флага и типа медии</option>
+                <option value="2">По названию чата/диалога в зависимости от типа медии</option>
+            </select>
+
+            <div class="col-md-7 col-lg-12" style="display:none;" id="block1">
+                <h4 class="mb-3">Всех чатов/диалогов в зависимости от флага и типа медии</h4>
+                <p class="mb-3 text-danger" style="display:none;" id="error1">Форма не заполнена или заполнена не правильно</p>
+                <p class="mb-3 text-danger" style="display:none;" id="badRequest">Значения невалидны</p>
+                <p class="mb-3 text-danger" style="display:none;" id="badServer">Исключение на сервере</p>
+                <p class="mb-3 text-success" style="display:none;" id="download1">Форма отправлена</p>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="Path" class="form-label">Путь</label>
+                            <input type="text" class="form-control" id="path" name="Path" placeholder="D:\test">
+                        </div>
+
+                        <div class="col-md-4 py-3">
+                            <label for="FromMedia" class="form-label">Тип медиа</label>
+                            <select name="FromMedia" id="fromMedia" class="form-select-lg  ml-3" aria-label=".form-select-lg example">
+                                <option value="Photo">Фотографии</option>
+                                <option value="Doc">Документы</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 py-3">
+                            <label for="FromPeer" class="form-label">Тип чата</label>
+                            <select name="FromPeer" id="fromPeer" class="form-select-lg ml-3" aria-label=".form-select-lg example">
+                                <option value="All">Все</option>
+                                <option value="Dialogs">Диалоги</option>
+                                <option value="Chats">Беседы</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                <input class="w-100 btn btn-primary btn-lg" id="submitVkArchiver" type="submit" value="Отправить" />
+            </div>
+
+            <div class="col-md-7 col-lg-12" style="display:none;" id="block2">
+                <h4 class="mb-3">По названию чата/диалога в зависимости от типа медии</h4>
+                <p class="mb-3 text-danger" style="display:none;" id="error2">Форма не заполнена или заполнена не правильно</p>
+                <p class="mb-3 text-danger" style="display:none;" id="badRequestName">Значения невалидны</p>
+                <p class="mb-3 text-danger" style="display:none;" id="badServerName">Исключение на сервере</p>
+                <p class="mb-3 text-success" style="display:none;" id="download2">Форма отправлена</p>
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="Path" class="form-label">Путь</label>
+                        <input type="text" class="form-control" id="pathName" name="Path" placeholder="D:\test">
+                    </div>
+
+                    <div class="col-12">
+                        <label for="Name" class="form-label">Имя как в VK</label>
+                        <input type="text" class="form-control" id="name" name="Name" placeholder="Геннадий Ляшенко">
+                    </div>
+
+
+                    <div class="col-md-4 py-3">
+                        <label for="FromMedia" class="form-label">Тип медиа</label>
+                        <select name="FromMedia" id="fromMediaName" class="form-select-lg  ml-3" aria-label=".form-select-lg example">
+                            <option value="Photo">Фотографии</option>
+                            <option value="Doc">Документы</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <hr class="my-4">
+                <input class="w-100 btn btn-primary btn-lg" id="submitVkArchiverName" type="submit" value="Отправить" />
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+
+    function optionCheck() {
+        var i, len, optionVal, helpDiv,
+            selectOptions = document.getElementById("options");
+
+        for (i = 0, len = selectOptions.options.length; i < len; i++) {
+            optionVal = selectOptions.options[i].value;
+            helpDiv = document.getElementById("block" + optionVal);
+
+            if (!helpDiv) { continue; }
+            
+            if (selectOptions.options[i].selected) {
+                helpDiv.style.display = "block";
+            } else {
+                helpDiv.style.display = "none";
+            }
+        }
+    }
+
+    async function getSubmitVkArchiverAsync() {
+
+        const formData = new FormData();
+        let path = document.getElementById("path").value;
+        let fromMedia = document.getElementById("fromMedia").value;
+        let fromPeer = document.getElementById("fromPeer").value;
+
+        formData.append("Path", path);
+        formData.append("FromMedia", fromMedia);
+        formData.append("FromPeer", fromPeer);
+
+        if (path === '' || fromMedia === '' || fromPeer === '') {
+            return false;
+        }
+
+        download(1);
+        
+        let response = await fetch("/archiver/archive", {
+            method: "POST",
+            body: formData
+        });
+
+        if (response.status === 400) {
+            let error = document.getElementById("badRequest");
+            error.style.display = "block";
+        } else if (response.status === 500) {
+            let error = document.getElementById("badServer");
+            error.style.display = "block";
+        }
+
+        return true;
+    };
+
+    async function getSubmitVkArchiverNameAsync() {
+
+        const formData = new FormData();
+        let pathName = document.getElementById("pathName").value;
+        let name = document.getElementById("name").value;
+        let fromMediaName = document.getElementById("fromMediaName").value;
+
+        if (pathName === '' || name === '' || fromMediaName === '') {
+            return false;
+        }
+
+        formData.append("Path", pathName);
+        formData.append("Name", name);
+        formData.append("FromMedia", fromMediaName);
+
+        download(2);
+        
+        let response = await fetch("/archiver/archive-name", {
+            method: "POST",
+            body: formData
+        });
+
+        if (response.status === 400) {
+            let error = document.getElementById("badRequestName");
+            error.style.display = "block";
+        } else if (response.status === 500) {
+            let error = document.getElementById("badServerName");
+            error.style.display = "block";
+        }
+
+        return true;
+    };
+
+    function error(n){
+        let error = document.getElementById("error" + n);
+        error.style.display = "block";
+    }
+
+    function download(n){
+        let download = document.getElementById("download" + n);
+        download.style.display = "block";
+    }
+
+    document.getElementById("options").onchange = optionCheck;
+
+    document.getElementById("submitVkArchiver").addEventListener("click", async e => {
+        e.preventDefault();
+        if (!await getSubmitVkArchiverAsync()) error(1);
+    });
+
+    document.getElementById("submitVkArchiverName").addEventListener("click", async e => {
+        e.preventDefault();
+        if (!await getSubmitVkArchiverNameAsync()) error(2);
+    });
+</script>
